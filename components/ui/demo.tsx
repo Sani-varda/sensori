@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import FlowArt, { FlowSection } from './story-scroll.tsx';
 import Logo from './logo.tsx';
 import { MapPin, ExternalLink, Phone, Mail, Globe, AlertCircle } from 'lucide-react';
@@ -153,6 +153,62 @@ const hampers: Hamper[] = [
 export default function FlowArtDefaultDemo() {
   const [activeHamperIndex, setActiveHamperIndex] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [, setScrollProgress] = useState(0);
+
+  useEffect(() => {
+    const handleScrollProgress = (e: Event) => {
+      const customEvent = e as CustomEvent<{ progress: number }>;
+      const progress = customEvent.detail?.progress;
+      if (typeof progress === 'number') {
+        const newIndex = Math.min(5, Math.max(0, Math.floor(progress * 5.999)));
+        setActiveHamperIndex(newIndex);
+        setScrollProgress(progress);
+      }
+    };
+
+    window.addEventListener('collection-scroll-progress', handleScrollProgress);
+    return () => {
+      window.removeEventListener('collection-scroll-progress', handleScrollProgress);
+    };
+  }, []);
+
+  const scrollToHamper = (idx: number) => {
+    setActiveHamperIndex(idx);
+    const trigger = (window as unknown as { __collectionScrollTrigger?: { start: number; end: number } }).__collectionScrollTrigger;
+    if (trigger && typeof trigger.start === 'number' && typeof trigger.end === 'number') {
+      const targetProgress = idx / 5;
+      const targetY = trigger.start + targetProgress * (trigger.end - trigger.start);
+      window.scrollTo({ top: targetY, behavior: 'smooth' });
+    }
+  };
+
+  const handleNextHamper = () => {
+    if (activeHamperIndex < hampers.length - 1) {
+      scrollToHamper(activeHamperIndex + 1);
+    } else {
+      // Once the user has seen all 6 services, advance to Section 03 (Customised Plan)
+      const trigger = (window as unknown as { __collectionScrollTrigger?: { end: number } }).__collectionScrollTrigger;
+      if (trigger && typeof trigger.end === 'number') {
+        window.scrollTo({ top: trigger.end + window.innerHeight * 0.95, behavior: 'smooth' });
+      } else {
+        window.scrollBy({ top: window.innerHeight, behavior: 'smooth' });
+      }
+    }
+  };
+
+  const handlePrevHamper = () => {
+    if (activeHamperIndex > 0) {
+      scrollToHamper(activeHamperIndex - 1);
+    } else {
+      // Return to Section 01 (Hero)
+      const trigger = (window as unknown as { __collectionScrollTrigger?: { start: number } }).__collectionScrollTrigger;
+      if (trigger && typeof trigger.start === 'number') {
+        window.scrollTo({ top: Math.max(0, trigger.start - window.innerHeight * 0.95), behavior: 'smooth' });
+      } else {
+        window.scrollBy({ top: -window.innerHeight, behavior: 'smooth' });
+      }
+    }
+  };
 
   const currentHamper = hampers[activeHamperIndex];
 
@@ -198,7 +254,7 @@ export default function FlowArtDefaultDemo() {
                 href="#collection"
                 onClick={(e) => {
                   e.preventDefault();
-                  window.scrollBy({ top: window.innerHeight * 0.95, behavior: 'smooth' });
+                  scrollToHamper(0);
                 }}
                 className="px-6 py-3 text-xs sm:text-sm font-bold uppercase tracking-wider bg-[#800000] text-white rounded hover:bg-[#800000]/90 transition-all shadow-lg border border-white/50 cursor-pointer"
               >
@@ -221,7 +277,7 @@ export default function FlowArtDefaultDemo() {
               href="#collection"
               onClick={(e) => {
                 e.preventDefault();
-                window.scrollBy({ top: window.innerHeight * 0.95, behavior: 'smooth' });
+                scrollToHamper(0);
               }}
               className="w-full text-center px-4 py-2 text-xs font-bold uppercase tracking-wider bg-white text-[#800000] border border-[#800000]/30 rounded cursor-pointer"
             >
@@ -286,10 +342,7 @@ export default function FlowArtDefaultDemo() {
             {['Drishti', 'Shruti', 'Gandh', 'Rasa', 'Sparsh', 'Panchtattva'].map((s, idx) => (
               <button
                 key={s}
-                onClick={() => {
-                  setActiveHamperIndex(idx);
-                  window.scrollBy({ top: window.innerHeight * 0.95, behavior: 'smooth' });
-                }}
+                onClick={() => scrollToHamper(idx)}
                 className="bg-white border border-[#800000]/30 px-1.5 py-0.5 rounded text-[#800000] hover:bg-[#800000] hover:text-white transition-all cursor-pointer font-bold"
               >
                 #{s}
@@ -346,182 +399,200 @@ export default function FlowArtDefaultDemo() {
       </FlowSection>
 
       {/* 02 — THE COLLECTION (DETAILED SHOWCASE WITH BIGGER IMAGES) */}
-      <FlowSection aria-label="The Collection" style={{ backgroundColor: '#ffffff', color: '#800000' }}>
-        {/* Background Watermark Logo */}
+      <FlowSection aria-label="The Collection" isCollection style={{ backgroundColor: '#ffffff', color: '#800000' }}>
+        {/* Background Watermark Logo with explicit 4% opacity */}
         <Logo
-          size={560}
+          size={520}
           aria-hidden="true"
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none select-none z-0 text-[#800000] opacity-[0.035] sm:opacity-[0.045] max-w-[85vw] max-h-[80vh]"
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+            opacity: 0.035,
+            pointerEvents: 'none',
+            zIndex: 0,
+            maxWidth: '80vw',
+            maxHeight: '75vh',
+          }}
+          className="text-[#800000] select-none"
         />
 
         <div className="relative z-10 flex flex-col justify-between min-h-full flex-1">
-          <div className="flex flex-wrap items-center justify-between gap-2 pt-12 sm:pt-14">
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-6 sm:pt-8">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#800000]">
                 02 — The Six Hampers Collection
               </p>
               <p className="text-[11px] font-semibold text-[#800000]/70 uppercase tracking-wider mt-0.5">
-                Choose a single sense — or experience all five
+                Smooth scroll to explore all six services • Service {activeHamperIndex + 1} of 06
               </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-[#800000]">
-              {currentHamper.id} of 06
-            </span>
-          </div>
-        </div>
-
-        <hr className="my-[1vw] border-none border-t border-[#800000]/20" />
-
-        {/* Sense Switcher Tabs — Clean Typographic Underline (No Maroon Rectangles / No Boxes) */}
-        <div className="flex flex-wrap items-center gap-4 sm:gap-6 my-3 border-b border-[#800000]/15 pb-1">
-          {hampers.map((hamper, idx) => (
-            <button
-              key={hamper.id}
-              onClick={() => setActiveHamperIndex(idx)}
-              className={`pb-2 text-xs sm:text-sm font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                activeHamperIndex === idx
-                  ? 'text-[#800000] border-b-2 border-[#800000]'
-                  : 'text-[#800000]/45 hover:text-[#800000] border-b-2 border-transparent'
-              }`}
-            >
-              {hamper.id} {hamper.name}
-            </button>
-          ))}
-        </div>
-
-        {/* Featured Hamper Large Showcase — Seamless Borderless Layout with Bigger Image */}
-        <div className="bg-white py-4 my-2 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
-          {/* Large Image Column (Takes 7 of 12 columns for bigger display) */}
-          <div className="lg:col-span-7 flex flex-col items-center justify-center">
-            <div
-              onClick={() => setIsModalOpen(true)}
-              className="relative w-full max-w-[580px] lg:max-w-[640px] aspect-square bg-white overflow-hidden flex items-center justify-center cursor-zoom-in group"
-            >
-              <img
-                src={currentHamper.image}
-                alt={`${currentHamper.name} Diwali Hamper`}
-                className="w-full h-full object-contain transform group-hover:scale-105 transition-transform duration-500"
-              />
-              <span className="absolute bottom-2 right-2 bg-white/90 border border-[#800000]/20 text-[#800000] text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded shadow-xs">
-                🔍 Click to Enlarge
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[#800000] bg-[#800000]/5 px-2.5 py-1 rounded border border-[#800000]/15">
+                Service {currentHamper.id} of 06 • {currentHamper.name}
               </span>
             </div>
-            <p className="text-[11px] text-[#800000]/60 mt-1 font-medium text-center">
-              {currentHamper.name} • {currentHamper.sense}
-            </p>
           </div>
 
-          {/* Product Explanation & Details Column (Takes 5 of 12 columns — Seamless, No Outlines) */}
-          <div className="lg:col-span-5 flex flex-col justify-between space-y-4">
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#800000]">
-                  Sense #{currentHamper.id} • {currentHamper.sense}
-                </span>
-                <span className="text-xs font-semibold text-[#800000]/65">
-                  — {currentHamper.tagline}
-                </span>
-              </div>
+          {/* Smooth Scroll Navigation Progress Bar */}
+          <div className="w-full bg-[#800000]/10 h-1.5 rounded-full overflow-hidden my-1.5" title="Smooth scroll progress through the six services">
+            <div
+              className="bg-[#800000] h-full transition-all duration-300 ease-out"
+              style={{ width: `${((activeHamperIndex + 1) / 6) * 100}%` }}
+            />
+          </div>
 
-              <h3 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#800000] uppercase tracking-tight mt-1.5">
-                {currentHamper.name}
-              </h3>
+          <hr className="my-[0.25vw] border-none border-t border-[#800000]/20" />
 
-              <div className="flex items-baseline gap-3 mt-1.5 pb-2 border-b border-[#800000]/15">
-                <span className="text-2xl sm:text-3xl font-black text-[#800000]">{currentHamper.price}</span>
-                <span className="text-xs font-semibold uppercase tracking-wider text-[#800000]/70">
-                  per hamper • Customised volume
-                </span>
-              </div>
-            </div>
-
-            <p className="text-sm leading-relaxed text-[#800000]/85 font-medium">
-              {currentHamper.overview}
-            </p>
-
-            {/* List of Products Explaining the Hamper — Clean & Seamless (No Outlines) */}
-            <div className="pt-1 space-y-2">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#800000]">
-                Curated Products & Inclusions:
-              </p>
-              <ul className="space-y-1.5 text-xs text-[#800000]/90">
-                {currentHamper.products.map((item, i) => (
-                  <li key={i} className="flex items-start gap-2">
-                    <span className="font-bold text-[#800000] text-sm leading-none">•</span>
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="text-xs text-[#800000]/80 pt-1">
-              <strong className="text-[#800000]">Ideal For:</strong> {currentHamper.idealFor}
-            </div>
-
-            {/* Action Bar — High-Contrast Clean Styling (No Maroon Blocks) */}
-            <div className="flex flex-wrap items-center gap-3 pt-3">
-              <a
-                href={`https://wa.me/918356918580?text=Hi%20Sensori%2C%20I%20am%20interested%20in%20ordering%20the%20${currentHamper.name}%20(${currentHamper.sense})%20Hamper`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-6 py-2.5 text-xs sm:text-sm font-bold uppercase tracking-wider bg-white text-[#800000] border-2 border-[#800000] rounded hover:bg-[#800000] hover:text-white transition-all shadow-sm"
+          {/* Sense Switcher Tabs — Clean Typographic Underline (No Maroon Rectangles / No Boxes) */}
+          <div className="flex flex-wrap items-center gap-3 sm:gap-6 my-1.5 border-b border-[#800000]/15 pb-1">
+            {hampers.map((hamper, idx) => (
+              <button
+                key={hamper.id}
+                onClick={() => scrollToHamper(idx)}
+                className={`pb-1.5 text-xs sm:text-sm font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                  activeHamperIndex === idx
+                    ? 'text-[#800000] border-b-2 border-[#800000]'
+                    : 'text-[#800000]/45 hover:text-[#800000] border-b-2 border-transparent'
+                }`}
               >
-                Inquire on WhatsApp
-              </a>
+                {hamper.id} {hamper.name}
+              </button>
+            ))}
+          </div>
 
-              <div className="flex items-center gap-1.5 ml-auto">
-                <button
-                  onClick={() =>
-                    setActiveHamperIndex((prev) => (prev > 0 ? prev - 1 : hampers.length - 1))
-                  }
-                  className="px-3 py-2 text-xs font-bold uppercase tracking-wider bg-white text-[#800000] border border-[#800000]/25 rounded hover:border-[#800000] cursor-pointer"
-                  title="Previous Hamper"
+          {/* Featured Hamper Large Showcase — Seamless Borderless Layout with Animated Transition */}
+          <div
+            key={currentHamper.id}
+            className="animate-fadeInHamper bg-white py-2 my-1 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center"
+          >
+            {/* Large Image Column (Takes 6 of 12 columns for well-proportioned display) */}
+            <div className="lg:col-span-6 flex flex-col items-center justify-center">
+              <div
+                onClick={() => setIsModalOpen(true)}
+                className="relative w-full max-w-[420px] lg:max-w-[480px] max-h-[46vh] aspect-square bg-white overflow-hidden flex items-center justify-center cursor-zoom-in group"
+              >
+                <img
+                  src={currentHamper.image}
+                  alt={`${currentHamper.name} Diwali Hamper`}
+                  className="w-full h-full object-contain transform group-hover:scale-105 transition-transform duration-500"
+                />
+                <span className="absolute bottom-2 right-2 bg-white/90 border border-[#800000]/20 text-[#800000] text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded shadow-xs">
+                  🔍 Click to Enlarge
+                </span>
+              </div>
+              <p className="text-[11px] text-[#800000]/60 mt-1 font-medium text-center">
+                {currentHamper.name} • {currentHamper.sense}
+              </p>
+            </div>
+
+            {/* Product Explanation & Details Column (Takes 6 of 12 columns — Seamless, No Outlines) */}
+            <div className="lg:col-span-6 flex flex-col justify-between space-y-3">
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#800000]">
+                    Sense #{currentHamper.id} • {currentHamper.sense}
+                  </span>
+                  <span className="text-xs font-semibold text-[#800000]/65">
+                    — {currentHamper.tagline}
+                  </span>
+                </div>
+
+                <h3 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#800000] uppercase tracking-tight mt-1.5">
+                  {currentHamper.name}
+                </h3>
+
+                <div className="flex items-baseline gap-3 mt-1.5 pb-2 border-b border-[#800000]/15">
+                  <span className="text-2xl sm:text-3xl font-black text-[#800000]">{currentHamper.price}</span>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-[#800000]/70">
+                    per hamper • Customised volume
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-sm leading-relaxed text-[#800000]/85 font-medium">
+                {currentHamper.overview}
+              </p>
+
+              {/* List of Products Explaining the Hamper — Clean & Seamless (No Outlines) */}
+              <div className="pt-1 space-y-2">
+                <p className="text-xs font-bold uppercase tracking-wider text-[#800000]">
+                  Curated Products & Inclusions:
+                </p>
+                <ul className="space-y-1.5 text-xs text-[#800000]/90">
+                  {currentHamper.products.map((item, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <span className="font-bold text-[#800000] text-sm leading-none">•</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="text-xs text-[#800000]/80 pt-1">
+                <strong className="text-[#800000]">Ideal For:</strong> {currentHamper.idealFor}
+              </div>
+
+              {/* Action Bar — High-Contrast Clean Styling (No Maroon Blocks) */}
+              <div className="flex flex-wrap items-center gap-3 pt-3">
+                <a
+                  href={`https://wa.me/918356918580?text=Hi%20Sensori%2C%20I%20am%20interested%20in%20ordering%20the%20${currentHamper.name}%20(${currentHamper.sense})%20Hamper`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-6 py-2.5 text-xs sm:text-sm font-bold uppercase tracking-wider bg-white text-[#800000] border-2 border-[#800000] rounded hover:bg-[#800000] hover:text-white transition-all shadow-sm"
                 >
-                  ← Prev
-                </button>
-                <button
-                  onClick={() =>
-                    setActiveHamperIndex((prev) => (prev < hampers.length - 1 ? prev + 1 : 0))
-                  }
-                  className="px-3 py-2 text-xs font-bold uppercase tracking-wider bg-white text-[#800000] border border-[#800000]/25 rounded hover:border-[#800000] cursor-pointer"
-                  title="Next Hamper"
-                >
-                  Next →
-                </button>
+                  Inquire on WhatsApp
+                </a>
+
+                <div className="flex items-center gap-1.5 ml-auto">
+                  <button
+                    onClick={handlePrevHamper}
+                    className="px-3.5 py-2 text-xs font-bold uppercase tracking-wider bg-white text-[#800000] border border-[#800000]/25 rounded hover:border-[#800000] cursor-pointer"
+                    title={activeHamperIndex === 0 ? "Back to Section 01 (Hero)" : "Previous Service"}
+                  >
+                    {activeHamperIndex === 0 ? '↑ Hero' : '← Prev'}
+                  </button>
+                  <button
+                    onClick={handleNextHamper}
+                    className="px-4 py-2 text-xs font-bold uppercase tracking-wider bg-[#800000] text-white rounded hover:bg-[#800000]/90 transition-all cursor-pointer shadow-sm"
+                    title={activeHamperIndex === hampers.length - 1 ? "Advance to 03 — Customised Plan" : "Next Service"}
+                  >
+                    {activeHamperIndex === hampers.length - 1 ? 'Next Page (03) ↓' : 'Next →'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Thumbnail Navigation Bar for All 6 Hampers — Seamless Strip */}
-        <div className="grid grid-cols-6 gap-2 my-2 pt-2 border-t border-[#800000]/15">
-          {hampers.map((hamper, idx) => (
-            <button
-              key={hamper.id}
-              onClick={() => setActiveHamperIndex(idx)}
-              className={`p-1.5 text-left flex flex-col sm:flex-row items-center gap-2 transition-all cursor-pointer bg-white ${
-                activeHamperIndex === idx
-                  ? 'border-b-2 border-[#800000] opacity-100'
-                  : 'border-b-2 border-transparent opacity-60 hover:opacity-100'
-              }`}
-            >
-              <img
-                src={hamper.image}
-                alt={hamper.name}
-                className="w-10 h-10 object-contain p-0.5"
-              />
-              <div className="hidden sm:block">
-                <p className="text-[10px] font-bold uppercase text-[#800000] leading-tight">
-                  {hamper.name}
-                </p>
-                <p className="text-[9px] text-[#800000]/70 font-semibold">{hamper.price}</p>
-              </div>
-            </button>
-          ))}
-        </div>
+          {/* Thumbnail Navigation Bar for All 6 Hampers — Seamless Strip */}
+          <div className="grid grid-cols-6 gap-2 my-2 pt-2 border-t border-[#800000]/15">
+            {hampers.map((hamper, idx) => (
+              <button
+                key={hamper.id}
+                onClick={() => scrollToHamper(idx)}
+                className={`p-1.5 text-left flex flex-col sm:flex-row items-center gap-2 transition-all cursor-pointer bg-white ${
+                  activeHamperIndex === idx
+                    ? 'border-b-2 border-[#800000] opacity-100'
+                    : 'border-b-2 border-transparent opacity-60 hover:opacity-100'
+                }`}
+              >
+                <img
+                  src={hamper.image}
+                  alt={hamper.name}
+                  className="w-10 h-10 object-contain p-0.5"
+                />
+                <div className="hidden sm:block">
+                  <p className="text-[10px] font-bold uppercase text-[#800000] leading-tight">
+                    {hamper.name}
+                  </p>
+                  <p className="text-[9px] text-[#800000]/70 font-semibold">{hamper.price}</p>
+                </div>
+              </button>
+            ))}
+          </div>
 
-        <hr className="my-[1vw] border-none border-t border-[#800000]/20" />
+          <hr className="my-[0.5vw] border-none border-t border-[#800000]/20" />
 
           <div className="mt-auto flex flex-wrap items-center justify-between text-xs text-[#800000] font-medium pb-2">
             <span>Catalog pricing confirmed upon order volume</span>
@@ -532,11 +603,22 @@ export default function FlowArtDefaultDemo() {
 
       {/* 03 — CUSTOMISED PLAN */}
       <FlowSection aria-label="Customised Plan" style={{ backgroundColor: '#ffffff', color: '#800000' }}>
-        {/* Background Watermark Logo */}
+        {/* Background Watermark Logo with explicit 3.5% opacity */}
         <Logo
-          size={560}
+          size={520}
           aria-hidden="true"
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none select-none z-0 text-[#800000] opacity-[0.035] sm:opacity-[0.045] max-w-[85vw] max-h-[80vh]"
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+            opacity: 0.035,
+            pointerEvents: 'none',
+            zIndex: 0,
+            maxWidth: '80vw',
+            maxHeight: '75vh',
+          }}
+          className="text-[#800000] select-none"
         />
 
         {/* VERTICAL MAROON MOVING MARQUEE ON RIGHT SIDE OF PAGE — HAPPY DIWALI */}
@@ -785,11 +867,22 @@ export default function FlowArtDefaultDemo() {
 
       {/* 04 — CORPORATE TESTIMONIALS */}
       <FlowSection aria-label="Corporate Testimonials" style={{ backgroundColor: '#ffffff', color: '#800000' }}>
-        {/* Background Watermark Logo */}
+        {/* Background Watermark Logo with explicit 3.5% opacity */}
         <Logo
-          size={560}
+          size={520}
           aria-hidden="true"
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none select-none z-0 text-[#800000] opacity-[0.035] sm:opacity-[0.045] max-w-[85vw] max-h-[80vh]"
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+            opacity: 0.035,
+            pointerEvents: 'none',
+            zIndex: 0,
+            maxWidth: '80vw',
+            maxHeight: '75vh',
+          }}
+          className="text-[#800000] select-none"
         />
 
         <div className="relative z-10 flex flex-col justify-between min-h-full flex-1">
@@ -981,11 +1074,22 @@ export default function FlowArtDefaultDemo() {
 
       {/* 05 — READY TO GIFT / ORDER */}
       <FlowSection aria-label="Order Diwali Hampers" style={{ backgroundColor: '#ffffff', color: '#800000' }} className="overflow-y-auto">
-        {/* Background Watermark Logo */}
+        {/* Background Watermark Logo with explicit 3.5% opacity */}
         <Logo
-          size={560}
+          size={520}
           aria-hidden="true"
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none select-none z-0 text-[#800000] opacity-[0.035] sm:opacity-[0.045] max-w-[85vw] max-h-[80vh]"
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+            opacity: 0.035,
+            pointerEvents: 'none',
+            zIndex: 0,
+            maxWidth: '80vw',
+            maxHeight: '75vh',
+          }}
+          className="text-[#800000] select-none"
         />
 
         <div className="relative z-10 flex flex-col justify-between min-h-full flex-1">

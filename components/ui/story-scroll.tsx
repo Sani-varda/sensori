@@ -7,6 +7,10 @@ import { useGSAP } from '@gsap/react';
 
 gsap.registerPlugin(ScrollTrigger);
 
+if (typeof window !== 'undefined') {
+  (window as unknown as { ScrollTrigger?: typeof ScrollTrigger }).ScrollTrigger = ScrollTrigger;
+}
+
 function cx(...parts: Array<string | undefined | false | null>): string {
   return parts.filter(Boolean).join(' ');
 }
@@ -16,6 +20,7 @@ export interface FlowSectionProps {
   style?: React.CSSProperties;
   children: React.ReactNode;
   'aria-label'?: string;
+  isCollection?: boolean;
 }
 
 export const FlowSection: React.FC<FlowSectionProps> = ({
@@ -23,9 +28,11 @@ export const FlowSection: React.FC<FlowSectionProps> = ({
   style = {},
   children,
   'aria-label': ariaLabel,
+  isCollection,
 }) => (
   <section
     data-flow-section
+    data-collection-section={isCollection ? 'true' : undefined}
     aria-label={ariaLabel}
     className={cx('relative min-h-screen w-full overflow-hidden', className)}
   >
@@ -98,7 +105,28 @@ const FlowArt: React.FC<FlowArtProps> = ({
           if (tween.scrollTrigger) triggers.push(tween.scrollTrigger);
         }
 
-        if (i < sections.length - 1) {
+        const isCollection = section.hasAttribute('data-collection-section');
+
+        if (isCollection) {
+          const colTrigger = ScrollTrigger.create({
+            id: 'collection-scroll-trigger',
+            trigger: section,
+            start: 'top top',
+            end: () => '+=' + (window.innerHeight * 4.5),
+            pin: true,
+            pinSpacing: true,
+            anticipatePin: 1,
+            onUpdate: (self) => {
+              window.dispatchEvent(
+                new CustomEvent('collection-scroll-progress', {
+                  detail: { progress: self.progress },
+                }),
+              );
+            },
+          });
+          triggers.push(colTrigger);
+          (window as unknown as { __collectionScrollTrigger?: ScrollTrigger }).__collectionScrollTrigger = colTrigger;
+        } else if (i < sections.length - 1) {
           triggers.push(
             ScrollTrigger.create({
               trigger: section,
@@ -115,6 +143,7 @@ const FlowArt: React.FC<FlowArtProps> = ({
 
       return () => {
         triggers.forEach((t) => t.kill());
+        delete (window as unknown as { __collectionScrollTrigger?: ScrollTrigger }).__collectionScrollTrigger;
       };
     },
     { scope: containerRef, dependencies: [childCount(children), reducedMotion] },

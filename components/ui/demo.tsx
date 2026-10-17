@@ -230,49 +230,59 @@ export default function FlowArtDefaultDemo() {
           </div>
         </div>
 
-        {/* COMPREHENSIVE MOBILE SEO CONTENT BLOCK (Fills mobile empty space with high-ranking copy) */}
-        <div className="flex sm:hidden flex-col gap-2.5 py-2.5 my-auto text-[#800000] border-t border-b border-[#800000]/15">
-          {/* Main SEO Heading & Subtitle */}
+        {/* COMPREHENSIVE MOBILE SEO CONTENT BLOCK (Seamlessly fills mobile viewport with rich copy) */}
+        <div className="flex sm:hidden flex-col justify-between gap-2 py-2 my-auto text-[#800000] border-t border-b border-[#800000]/15 w-full max-w-full overflow-hidden">
+          {/* Eyebrow & Title */}
           <div>
-            <div className="flex items-center justify-between gap-1 mb-1">
-              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#800000]/70">
-                LUXURY CORPORATE DIWALI GIFTING
+            <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
+              <span className="text-[9px] font-black uppercase tracking-wider text-[#800000]">
+                FIVE SENSES LUXURY FESTIVE STUDIO
               </span>
-              <span className="text-[9px] font-bold uppercase text-[#800000] bg-white border border-[#800000]/30 px-1.5 py-0.5 rounded">
-                MIN. ORDER: 30
+              <span className="text-[9px] font-extrabold uppercase tracking-wider text-[#800000] bg-white border border-[#800000]/30 px-1.5 py-0.2 rounded">
+                MOQ: 30
               </span>
             </div>
             <h1 className="text-sm font-black uppercase tracking-tight text-[#800000] leading-tight">
-              India’s First Five Senses Festive Hampers
+              India’s First Five Senses Corporate Diwali Hampers
             </h1>
             <p className="text-[11px] leading-relaxed text-[#800000]/85 mt-1 font-medium">
-              Sensori by Sensora curates bespoke corporate Diwali hampers across Mumbai, Delhi NCR, Bengaluru, Hyderabad & Pan-India. Awaken sight, sound, scent, taste, and touch with artisanal brass diyas, sacred temple chimes, pure botanical aromas, and royal saffron delicacies.
+              Sensori by Sensora curates multi-sensory luxury corporate Diwali gifts across Mumbai, Bengaluru, Delhi NCR, Hyderabad, Chennai, and Pan-India. Every hamper is thoughtfully architected around the 5 senses — sight, sound, scent, taste, and touch.
             </p>
           </div>
 
-          {/* 4 Core Pillars Grid (2x2 on Mobile) */}
-          <div className="grid grid-cols-2 gap-2 text-[10px] text-[#800000]">
-            <div className="border-t border-[#800000]/20 pt-1.5">
-              <p className="font-bold uppercase tracking-wider text-[#800000]">5 Senses Concept</p>
-              <p className="text-[#800000]/75 leading-tight mt-0.5">Drishti, Shruti, Gandh, Rasa & Sparsh</p>
+          {/* 5 Senses Inclusion Guide */}
+          <div className="border-t border-[#800000]/15 pt-1.5">
+            <p className="text-[9px] font-black uppercase tracking-widest text-[#800000] mb-0.5">
+              The Five Senses Inclusions:
+            </p>
+            <p className="text-[10px] leading-relaxed text-[#800000]/85">
+              <strong className="text-[#800000]">Sight:</strong> Brass diyas • <strong className="text-[#800000]">Sound:</strong> Temple chimes • <strong className="text-[#800000]">Scent:</strong> Soy candles • <strong className="text-[#800000]">Taste:</strong> Saffron sweets • <strong className="text-[#800000]">Touch:</strong> Brass keepsakes • <strong className="text-[#800000]">Panchtattva:</strong> 5-in-1 grand box
+            </p>
+          </div>
+
+          {/* Corporate B2B Features Grid */}
+          <div className="grid grid-cols-2 gap-2 text-[10px] text-[#800000] border-t border-[#800000]/15 pt-1.5">
+            <div>
+              <p className="font-bold uppercase tracking-wider text-[#800000]">Custom Branding</p>
+              <p className="text-[#800000]/75 leading-tight text-[9px] mt-0.5">Gold foil logo, ribbon & cards</p>
             </div>
-            <div className="border-t border-[#800000]/20 pt-1.5">
-              <p className="font-bold uppercase tracking-wider text-[#800000]">Corporate Branding</p>
-              <p className="text-[#800000]/75 leading-tight mt-0.5">Custom gold foil logos & message cards</p>
+            <div>
+              <p className="font-bold uppercase tracking-wider text-[#800000]">Tiered Budgets</p>
+              <p className="text-[#800000]/75 leading-tight text-[9px] mt-0.5">₹700 to ₹3,000+ (Min. 30 Qty)</p>
             </div>
-            <div className="border-t border-[#800000]/20 pt-1.5">
-              <p className="font-bold uppercase tracking-wider text-[#800000]">₹700 – ₹3,000+</p>
-              <p className="text-[#800000]/75 leading-tight mt-0.5">Optimized for every corporate budget</p>
+            <div>
+              <p className="font-bold uppercase tracking-wider text-[#800000]">Pan-India Logistics</p>
+              <p className="text-[#800000]/75 leading-tight text-[9px] mt-0.5">19,000+ pin codes delivery</p>
             </div>
-            <div className="border-t border-[#800000]/20 pt-1.5">
-              <p className="font-bold uppercase tracking-wider text-[#800000]">19,000+ Pin Codes</p>
-              <p className="text-[#800000]/75 leading-tight mt-0.5">Guaranteed on-time Diwali dispatch</p>
+            <div>
+              <p className="font-bold uppercase tracking-wider text-[#800000]">Eco-Keepsake</p>
+              <p className="text-[#800000]/75 leading-tight text-[9px] mt-0.5">Reusable plastic-free rigid boxes</p>
             </div>
           </div>
 
-          {/* Hamper Quick Discovery Tags */}
-          <div className="pt-1 flex flex-wrap items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider">
-            <span className="text-[#800000]/60">Explore:</span>
+          {/* Quick Hamper Shortcut Buttons */}
+          <div className="pt-1 border-t border-[#800000]/15 flex flex-wrap items-center gap-1 text-[9px] font-bold uppercase tracking-wider">
+            <span className="text-[#800000]/70">Explore:</span>
             {['Drishti', 'Shruti', 'Gandh', 'Rasa', 'Sparsh', 'Panchtattva'].map((s, idx) => (
               <button
                 key={s}
@@ -280,7 +290,7 @@ export default function FlowArtDefaultDemo() {
                   setActiveHamperIndex(idx);
                   window.scrollBy({ top: window.innerHeight * 0.95, behavior: 'smooth' });
                 }}
-                className="bg-white border border-[#800000]/25 px-1.5 py-0.5 rounded text-[#800000] hover:bg-[#800000] hover:text-white transition-all cursor-pointer"
+                className="bg-white border border-[#800000]/30 px-1.5 py-0.5 rounded text-[#800000] hover:bg-[#800000] hover:text-white transition-all cursor-pointer font-bold"
               >
                 #{s}
               </button>

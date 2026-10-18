@@ -37,17 +37,12 @@ export const FlowSection: React.FC<FlowSectionProps> = ({
     data-flow-section
     data-collection-section={isCollection ? 'true' : undefined}
     aria-label={ariaLabel}
-    className={cx(
-      'relative w-full',
-      isCollection ? 'min-h-screen overflow-visible lg:overflow-hidden' : 'min-h-screen overflow-x-hidden',
-      className,
-    )}
+    className={cx('relative min-h-screen w-full overflow-hidden', className)}
   >
     <div
       data-flow-inner
       className={cx(
-        'flow-art-container relative flex w-full flex-col justify-between gap-6 px-[4vw] pt-[clamp(2rem,8vw,4vw)] pb-[4vw]',
-        isCollection ? 'min-h-screen lg:min-h-screen h-auto' : 'min-h-screen',
+        'flow-art-container relative flex min-h-screen w-full flex-col justify-between gap-4 px-[4vw] pt-[clamp(1.5rem,6vw,3vw)] pb-[3vw]',
         'will-change-transform',
       )}
       style={{ transformOrigin: 'bottom left', ...style }}
@@ -85,15 +80,19 @@ const FlowArt: React.FC<FlowArtProps> = ({
     () => {
       if (!containerRef.current || reducedMotion) return;
 
-      const sections = Array.from(
+      const allSections = Array.from(
         containerRef.current.querySelectorAll<HTMLElement>('[data-flow-section]'),
       );
-      if (sections.length === 0) return;
+      if (allSections.length === 0) return;
 
       const mm = gsap.matchMedia();
 
       // DESKTOP: Full interactive pinned collection & section rotations
       mm.add('(min-width: 1024px)', () => {
+        const sections = allSections.filter((el) => {
+          return window.getComputedStyle(el).display !== 'none';
+        });
+
         const triggers: ScrollTrigger[] = [];
 
         sections.forEach((section, i) => {
@@ -157,18 +156,53 @@ const FlowArt: React.FC<FlowArtProps> = ({
         };
       });
 
-      // MOBILE: Natural smooth scrolling through all services without rigid pinning
+      // MOBILE: Flip pages enabled for all mobile sections including individual service pages!
       mm.add('(max-width: 1023px)', () => {
+        const sections = allSections.filter((el) => {
+          return window.getComputedStyle(el).display !== 'none';
+        });
+
+        const triggers: ScrollTrigger[] = [];
+
         sections.forEach((section, i) => {
           gsap.set(section, { zIndex: i + 1 });
 
           const inner = section.querySelector<HTMLElement>('.flow-art-container');
-          if (inner) {
-            gsap.set(inner, { rotation: 0, clearProps: 'transform' });
+          if (!inner) return;
+
+          // Flip page rotation: 30deg from bottom-left scrubbed into place
+          if (i > 0) {
+            gsap.set(inner, { rotation: 30, transformOrigin: 'bottom left' });
+            const tween = gsap.to(inner, {
+              rotation: 0,
+              ease: 'none',
+              scrollTrigger: {
+                trigger: section,
+                start: 'top bottom',
+                end: 'top 20%',
+                scrub: true,
+              },
+            });
+            if (tween.scrollTrigger) triggers.push(tween.scrollTrigger);
+          }
+
+          // Pin previous page while the next page flips over it
+          if (i < sections.length - 1) {
+            triggers.push(
+              ScrollTrigger.create({
+                trigger: section,
+                start: 'bottom bottom',
+                end: 'bottom top',
+                pin: true,
+                pinSpacing: false,
+              }),
+            );
           }
         });
 
-        return () => {};
+        return () => {
+          triggers.forEach((t) => t.kill());
+        };
       });
 
       ScrollTrigger.refresh();

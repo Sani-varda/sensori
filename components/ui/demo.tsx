@@ -153,6 +153,7 @@ const hampers: Hamper[] = [
 export default function FlowArtDefaultDemo() {
   const [activeHamperIndex, setActiveHamperIndex] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalHamper, setModalHamper] = useState<(typeof hampers)[0] | null>(null);
   const [, setScrollProgress] = useState(0);
 
   useEffect(() => {
@@ -172,8 +173,46 @@ export default function FlowArtDefaultDemo() {
     };
   }, []);
 
+  // Update active hamper index on mobile scroll
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const observers: IntersectionObserver[] = [];
+    hampers.forEach((_, idx) => {
+      const el = document.getElementById(`mobile-service-${idx}`);
+      if (!el) return;
+      const obs = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              setActiveHamperIndex(idx);
+            }
+          });
+        },
+        { rootMargin: '-20% 0px -50% 0px', threshold: 0.1 }
+      );
+      obs.observe(el);
+      observers.push(obs);
+    });
+
+    return () => {
+      observers.forEach((obs) => obs.disconnect());
+    };
+  }, []);
+
   const scrollToHamper = (idx: number) => {
     setActiveHamperIndex(idx);
+
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      const el = document.getElementById(`mobile-service-${idx}`);
+      if (el) {
+        const yOffset = -55;
+        const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+        return;
+      }
+    }
+
     const trigger = (window as unknown as { __collectionScrollTrigger?: { start: number; end: number } }).__collectionScrollTrigger;
     if (trigger && typeof trigger.start === 'number' && typeof trigger.end === 'number') {
       const targetProgress = idx / 5;
@@ -187,6 +226,13 @@ export default function FlowArtDefaultDemo() {
       scrollToHamper(activeHamperIndex + 1);
     } else {
       // Once the user has seen all 6 services, advance to Section 03 (Customised Plan)
+      if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+        const el = document.getElementById('customised-plan-section');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' });
+          return;
+        }
+      }
       const trigger = (window as unknown as { __collectionScrollTrigger?: { end: number } }).__collectionScrollTrigger;
       if (trigger && typeof trigger.end === 'number') {
         window.scrollTo({ top: trigger.end + window.innerHeight * 0.95, behavior: 'smooth' });
@@ -201,6 +247,10 @@ export default function FlowArtDefaultDemo() {
       scrollToHamper(activeHamperIndex - 1);
     } else {
       // Return to Section 01 (Hero)
+      if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
       const trigger = (window as unknown as { __collectionScrollTrigger?: { start: number } }).__collectionScrollTrigger;
       if (trigger && typeof trigger.start === 'number') {
         window.scrollTo({ top: Math.max(0, trigger.start - window.innerHeight * 0.95), behavior: 'smooth' });
@@ -399,7 +449,7 @@ export default function FlowArtDefaultDemo() {
       </FlowSection>
 
       {/* 02 — THE COLLECTION (DETAILED SHOWCASE WITH BIGGER IMAGES) */}
-      <FlowSection aria-label="The Collection" isCollection style={{ backgroundColor: '#ffffff', color: '#800000' }}>
+      <FlowSection id="collection-section" aria-label="The Collection" isCollection style={{ backgroundColor: '#ffffff', color: '#800000' }}>
         {/* Background Watermark Logo with explicit 4% opacity */}
         <Logo
           size={520}
@@ -418,7 +468,8 @@ export default function FlowArtDefaultDemo() {
           className="text-[#800000] select-none"
         />
 
-        <div className="relative z-10 flex flex-col justify-between min-h-full flex-1">
+        {/* DESKTOP VIEW (hidden lg:flex): Pinned interactive showcase */}
+        <div className="hidden lg:flex relative z-10 flex-col justify-between min-h-full flex-1">
           <div className="flex flex-wrap items-center justify-between gap-2 pt-6 sm:pt-8">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#800000]">
@@ -470,7 +521,10 @@ export default function FlowArtDefaultDemo() {
             {/* Large Image Column (Takes 6 of 12 columns for well-proportioned display) */}
             <div className="lg:col-span-6 flex flex-col items-center justify-center">
               <div
-                onClick={() => setIsModalOpen(true)}
+                onClick={() => {
+                  setModalHamper(currentHamper);
+                  setIsModalOpen(true);
+                }}
                 className="relative w-full max-w-[420px] lg:max-w-[480px] max-h-[46vh] aspect-square bg-white overflow-hidden flex items-center justify-center cursor-zoom-in group"
               >
                 <img
@@ -599,10 +653,175 @@ export default function FlowArtDefaultDemo() {
             <span className="font-bold">Portal: www.gifting.sensora.co.in</span>
           </div>
         </div>
+
+        {/* MOBILE VIEW (block lg:hidden): Natural, complete smooth scroll through all 6 services with all details shown */}
+        <div className="block lg:hidden relative z-10 w-full space-y-5 pt-3 pb-8">
+          {/* Section 02 Mobile Header */}
+          <div className="space-y-1">
+            <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#800000]">
+              02 — The Six Hampers Collection
+            </p>
+            <h2 className="text-2xl font-black uppercase text-[#800000] tracking-tight">
+              Diwali 2026 Luxury Sensory Hampers
+            </h2>
+            <p className="text-xs text-[#800000]/75 font-medium leading-relaxed">
+              Explore the full curated details, handcrafted inclusions, and corporate gifting specifications for each of our six signature services below.
+            </p>
+          </div>
+
+          {/* Sticky Sense Navigation Pill Bar */}
+          <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-md py-2.5 -mx-[4vw] px-[4vw] border-y border-[#800000]/20 shadow-xs flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#800000]/60 shrink-0">
+              Services:
+            </span>
+            {hampers.map((hamper, idx) => (
+              <button
+                key={hamper.id}
+                onClick={() => scrollToHamper(idx)}
+                className={`text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full whitespace-nowrap transition-all cursor-pointer border ${
+                  activeHamperIndex === idx
+                    ? 'bg-[#800000] text-white border-[#800000] shadow-xs'
+                    : 'bg-white text-[#800000]/75 border-[#800000]/25 hover:border-[#800000] hover:text-[#800000]'
+                }`}
+              >
+                {hamper.id} {hamper.name}
+              </button>
+            ))}
+          </div>
+
+          {/* All 6 Services Rendered in Complete Sequential Detail */}
+          <div className="space-y-8">
+            {hampers.map((hamper, idx) => (
+              <article
+                key={hamper.id}
+                id={`mobile-service-${idx}`}
+                className="scroll-mt-16 pt-3 pb-8 border-b-2 border-[#800000]/15 last:border-b-0 space-y-4"
+              >
+                {/* Service Tag & Sense */}
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#800000] bg-[#800000]/5 px-2.5 py-1 rounded border border-[#800000]/20">
+                    Service {hamper.id} of 06 • {hamper.sense}
+                  </span>
+                  <span className="text-[11px] font-semibold text-[#800000]/70">
+                    {hamper.tagline}
+                  </span>
+                </div>
+
+                {/* Service Title & Pricing */}
+                <div>
+                  <h3 className="text-3xl font-extrabold text-[#800000] uppercase tracking-tight">
+                    {hamper.name}
+                  </h3>
+                  <div className="flex items-baseline gap-2.5 mt-1 pb-2 border-b border-[#800000]/15">
+                    <span className="text-2xl font-black text-[#800000]">{hamper.price}</span>
+                    <span className="text-xs font-semibold uppercase tracking-wider text-[#800000]/70">
+                      per hamper • Volume discounts available
+                    </span>
+                  </div>
+                </div>
+
+                {/* Hamper Image with Tap to Enlarge */}
+                <div className="flex flex-col items-center">
+                  <div
+                    onClick={() => {
+                      setModalHamper(hamper);
+                      setIsModalOpen(true);
+                    }}
+                    className="relative w-full max-w-[320px] aspect-square bg-white flex items-center justify-center cursor-zoom-in group"
+                  >
+                    <img
+                      src={hamper.image}
+                      alt={`${hamper.name} Diwali Hamper`}
+                      className="w-full h-full object-contain p-2"
+                    />
+                    <span className="absolute bottom-2 right-2 bg-white/95 border border-[#800000]/25 text-[#800000] text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded shadow-xs">
+                      🔍 Tap to Enlarge
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[#800000]/60 mt-1 font-medium text-center">
+                    {hamper.name} • {hamper.sense}
+                  </p>
+                </div>
+
+                {/* Overview Paragraph */}
+                <p className="text-xs sm:text-sm leading-relaxed text-[#800000]/90 font-medium">
+                  {hamper.overview}
+                </p>
+
+                {/* Curated Products & Inclusions List */}
+                <div className="p-3.5 bg-[#800000]/[0.025] rounded border border-[#800000]/15 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-bold uppercase tracking-wider text-[#800000]">
+                      Curated Products & Inclusions:
+                    </p>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#800000] bg-[#800000]/10 px-2 py-0.5 rounded">
+                      {hamper.products.length} Items
+                    </span>
+                  </div>
+                  <ul className="space-y-2 text-xs text-[#800000]/90">
+                    {hamper.products.map((item, pIdx) => (
+                      <li key={pIdx} className="flex items-start gap-2.5">
+                        <span className="font-bold text-[#800000] text-sm leading-none mt-0.5">•</span>
+                        <span className="leading-relaxed font-medium">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Ideal For */}
+                <div className="text-xs text-[#800000]/80">
+                  <strong className="text-[#800000]">Ideal For:</strong> {hamper.idealFor}
+                </div>
+
+                {/* WhatsApp Order & Navigation Action Buttons */}
+                <div className="space-y-2 pt-2">
+                  <a
+                    href={`https://wa.me/918356918580?text=Hi%20Sensori%2C%20I%20am%20interested%20in%20ordering%20the%20${hamper.name}%20(${hamper.sense})%20Hamper`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full block text-center py-2.5 text-xs font-bold uppercase tracking-wider bg-white text-[#800000] border-2 border-[#800000] rounded hover:bg-[#800000] hover:text-white transition-all shadow-xs"
+                  >
+                    Inquire for {hamper.name} on WhatsApp
+                  </a>
+
+                  {idx < 5 ? (
+                    <button
+                      onClick={() => scrollToHamper(idx + 1)}
+                      className="w-full text-center py-2 text-[11px] font-bold uppercase tracking-wider text-[#800000]/75 hover:text-[#800000] flex items-center justify-center gap-1.5 cursor-pointer bg-[#800000]/5 rounded border border-[#800000]/15"
+                    >
+                      <span>Scroll to Next Service: 0{idx + 2} {hampers[idx + 1].name} ({hampers[idx + 1].price})</span>
+                      <span>↓</span>
+                    </button>
+                  ) : (
+                    <div className="pt-4 border-t border-[#800000]/20 text-center space-y-3">
+                      <div className="bg-[#800000]/5 border border-[#800000]/15 p-3 rounded text-center">
+                        <p className="text-xs font-bold uppercase tracking-wider text-[#800000]">
+                          ✓ All 6 Sensory Hampers Explored
+                        </p>
+                        <p className="text-[11px] text-[#800000]/75 mt-0.5">
+                          Continue scrolling to view bespoke customisation & bulk orders
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const el = document.getElementById('customised-plan-section');
+                          if (el) el.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                        className="w-full block py-2.5 text-xs font-bold uppercase tracking-wider bg-[#800000] text-white rounded shadow-sm cursor-pointer"
+                      >
+                        03 — Customised Plan & Pricing ↓
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
       </FlowSection>
 
       {/* 03 — CUSTOMISED PLAN */}
-      <FlowSection aria-label="Customised Plan" style={{ backgroundColor: '#ffffff', color: '#800000' }}>
+      <FlowSection id="customised-plan-section" aria-label="Customised Plan" style={{ backgroundColor: '#ffffff', color: '#800000' }}>
         {/* Background Watermark Logo with explicit 3.5% opacity */}
         <Logo
           size={520}
@@ -1319,57 +1538,60 @@ export default function FlowArtDefaultDemo() {
       </FlowSection>
 
       {/* FULL-SCREEN IMAGE MODAL FOR HIGH-RES INSPECTION */}
-      {isModalOpen && (
-        <div
-          onClick={() => setIsModalOpen(false)}
-          className="fixed inset-0 z-50 bg-white p-4 sm:p-8 flex flex-col items-center justify-center cursor-zoom-out"
-        >
+      {isModalOpen && (() => {
+        const activeModalHamper = modalHamper || currentHamper;
+        return (
           <div
-            onClick={(e) => e.stopPropagation()}
-            className="bg-white border-2 border-[#800000] rounded-lg max-w-4xl w-full p-4 sm:p-6 shadow-2xl flex flex-col items-center"
+            onClick={() => setIsModalOpen(false)}
+            className="fixed inset-0 z-50 bg-white p-4 sm:p-8 flex flex-col items-center justify-center cursor-zoom-out"
           >
-            <div className="w-full flex items-center justify-between pb-3 border-b border-[#800000]/20 mb-4">
-              <div>
-                <h4 className="text-xl font-extrabold uppercase text-[#800000]">
-                  {currentHamper.id} {currentHamper.name} — {currentHamper.sense}
-                </h4>
-                <p className="text-xs text-[#800000]/70 font-semibold">{currentHamper.price}</p>
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white border-2 border-[#800000] rounded-lg max-w-4xl w-full p-4 sm:p-6 shadow-2xl flex flex-col items-center"
+            >
+              <div className="w-full flex items-center justify-between pb-3 border-b border-[#800000]/20 mb-4">
+                <div>
+                  <h4 className="text-xl font-extrabold uppercase text-[#800000]">
+                    {activeModalHamper.id} {activeModalHamper.name} — {activeModalHamper.sense}
+                  </h4>
+                  <p className="text-xs text-[#800000]/70 font-semibold">{activeModalHamper.price}</p>
+                </div>
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-3 py-1.5 text-xs font-bold uppercase bg-white border border-[#800000] text-[#800000] rounded hover:bg-[#800000] hover:text-white transition-all cursor-pointer"
+                >
+                  Close ✕
+                </button>
               </div>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="px-3 py-1.5 text-xs font-bold uppercase bg-white border border-[#800000] text-[#800000] rounded hover:bg-[#800000] hover:text-white transition-all cursor-pointer"
-              >
-                Close ✕
-              </button>
-            </div>
 
-            <div className="w-full max-h-[70vh] flex items-center justify-center overflow-hidden bg-white">
-              <img
-                src={currentHamper.image}
-                alt={currentHamper.name}
-                className="max-h-[68vh] max-w-full object-contain"
-              />
-            </div>
-
-            <div className="w-full mt-4 pt-3 border-t border-[#800000]/20 flex flex-wrap items-center justify-between gap-3 text-xs text-[#800000]">
-              <div className="flex flex-col">
-                <span className="font-semibold">{currentHamper.overview}</span>
-                <span className="text-[10px] text-[#800000]/70 font-bold uppercase tracking-wider mt-0.5">
-                  Minimum Order Quantity: 30 Hampers
-                </span>
+              <div className="w-full max-h-[70vh] flex items-center justify-center overflow-hidden bg-white">
+                <img
+                  src={activeModalHamper.image}
+                  alt={activeModalHamper.name}
+                  className="max-h-[68vh] max-w-full object-contain"
+                />
               </div>
-              <a
-                href={`https://wa.me/918356918580?text=Hi%20Sensori%2C%20I%20want%20to%20order%20the%20${currentHamper.name}%20Hamper%20(Min.%2030%20Qty)`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-5 py-2 font-bold uppercase bg-white border-2 border-[#800000] text-[#800000] rounded hover:bg-[#800000] hover:text-white transition-all"
-              >
-                Order this Hamper (Min. 30)
-              </a>
+
+              <div className="w-full mt-4 pt-3 border-t border-[#800000]/20 flex flex-wrap items-center justify-between gap-3 text-xs text-[#800000]">
+                <div className="flex flex-col">
+                  <span className="font-semibold">{activeModalHamper.overview}</span>
+                  <span className="text-[10px] text-[#800000]/70 font-bold uppercase tracking-wider mt-0.5">
+                    Minimum Order Quantity: 30 Hampers
+                  </span>
+                </div>
+                <a
+                  href={`https://wa.me/918356918580?text=Hi%20Sensori%2C%20I%20want%20to%20order%20the%20${activeModalHamper.name}%20Hamper%20(Min.%2030%20Qty)`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-5 py-2 font-bold uppercase bg-white border-2 border-[#800000] text-[#800000] rounded hover:bg-[#800000] hover:text-white transition-all"
+                >
+                  Order this Hamper (Min. 30)
+                </a>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </FlowArt>
   );
 }

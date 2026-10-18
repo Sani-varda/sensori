@@ -16,6 +16,7 @@ function cx(...parts: Array<string | undefined | false | null>): string {
 }
 
 export interface FlowSectionProps {
+  id?: string;
   className?: string;
   style?: React.CSSProperties;
   children: React.ReactNode;
@@ -24,6 +25,7 @@ export interface FlowSectionProps {
 }
 
 export const FlowSection: React.FC<FlowSectionProps> = ({
+  id,
   className,
   style = {},
   children,
@@ -31,15 +33,21 @@ export const FlowSection: React.FC<FlowSectionProps> = ({
   isCollection,
 }) => (
   <section
+    id={id}
     data-flow-section
     data-collection-section={isCollection ? 'true' : undefined}
     aria-label={ariaLabel}
-    className={cx('relative min-h-screen w-full overflow-hidden', className)}
+    className={cx(
+      'relative w-full',
+      isCollection ? 'min-h-screen overflow-visible lg:overflow-hidden' : 'min-h-screen overflow-x-hidden',
+      className,
+    )}
   >
     <div
       data-flow-inner
       className={cx(
-        'flow-art-container relative flex min-h-screen w-full flex-col justify-between gap-6 px-[4vw] pt-[clamp(2rem,8vw,4vw)] pb-[4vw]',
+        'flow-art-container relative flex w-full flex-col justify-between gap-6 px-[4vw] pt-[clamp(2rem,8vw,4vw)] pb-[4vw]',
+        isCollection ? 'min-h-screen lg:min-h-screen h-auto' : 'min-h-screen',
         'will-change-transform',
       )}
       style={{ transformOrigin: 'bottom left', ...style }}
@@ -82,68 +90,91 @@ const FlowArt: React.FC<FlowArtProps> = ({
       );
       if (sections.length === 0) return;
 
-      const triggers: ScrollTrigger[] = [];
+      const mm = gsap.matchMedia();
 
-      sections.forEach((section, i) => {
-        gsap.set(section, { zIndex: i + 1 });
+      // DESKTOP: Full interactive pinned collection & section rotations
+      mm.add('(min-width: 1024px)', () => {
+        const triggers: ScrollTrigger[] = [];
 
-        const inner = section.querySelector<HTMLElement>('.flow-art-container');
-        if (!inner) return;
+        sections.forEach((section, i) => {
+          gsap.set(section, { zIndex: i + 1 });
 
-        if (i > 0) {
-          gsap.set(inner, { rotation: 30, transformOrigin: 'bottom left' });
-          const tween = gsap.to(inner, {
-            rotation: 0,
-            ease: 'none',
-            scrollTrigger: {
+          const inner = section.querySelector<HTMLElement>('.flow-art-container');
+          if (!inner) return;
+
+          if (i > 0) {
+            gsap.set(inner, { rotation: 30, transformOrigin: 'bottom left' });
+            const tween = gsap.to(inner, {
+              rotation: 0,
+              ease: 'none',
+              scrollTrigger: {
+                trigger: section,
+                start: 'top bottom',
+                end: 'top 25%',
+                scrub: true,
+              },
+            });
+            if (tween.scrollTrigger) triggers.push(tween.scrollTrigger);
+          }
+
+          const isCollection = section.hasAttribute('data-collection-section');
+
+          if (isCollection) {
+            const colTrigger = ScrollTrigger.create({
+              id: 'collection-scroll-trigger',
               trigger: section,
-              start: 'top bottom',
-              end: 'top 25%',
-              scrub: true,
-            },
-          });
-          if (tween.scrollTrigger) triggers.push(tween.scrollTrigger);
-        }
-
-        const isCollection = section.hasAttribute('data-collection-section');
-
-        if (isCollection) {
-          const colTrigger = ScrollTrigger.create({
-            id: 'collection-scroll-trigger',
-            trigger: section,
-            start: 'top top',
-            end: () => '+=' + (window.innerHeight * 4.5),
-            pin: true,
-            pinSpacing: true,
-            anticipatePin: 1,
-            onUpdate: (self) => {
-              window.dispatchEvent(
-                new CustomEvent('collection-scroll-progress', {
-                  detail: { progress: self.progress },
-                }),
-              );
-            },
-          });
-          triggers.push(colTrigger);
-          (window as unknown as { __collectionScrollTrigger?: ScrollTrigger }).__collectionScrollTrigger = colTrigger;
-        } else if (i < sections.length - 1) {
-          triggers.push(
-            ScrollTrigger.create({
-              trigger: section,
-              start: 'bottom bottom',
-              end: 'bottom top',
+              start: 'top top',
+              end: () => '+=' + (window.innerHeight * 4.5),
               pin: true,
-              pinSpacing: false,
-            }),
-          );
-        }
+              pinSpacing: true,
+              anticipatePin: 1,
+              onUpdate: (self) => {
+                window.dispatchEvent(
+                  new CustomEvent('collection-scroll-progress', {
+                    detail: { progress: self.progress },
+                  }),
+                );
+              },
+            });
+            triggers.push(colTrigger);
+            (window as unknown as { __collectionScrollTrigger?: ScrollTrigger }).__collectionScrollTrigger = colTrigger;
+          } else if (i < sections.length - 1) {
+            triggers.push(
+              ScrollTrigger.create({
+                trigger: section,
+                start: 'bottom bottom',
+                end: 'bottom top',
+                pin: true,
+                pinSpacing: false,
+              }),
+            );
+          }
+        });
+
+        return () => {
+          triggers.forEach((t) => t.kill());
+          delete (window as unknown as { __collectionScrollTrigger?: ScrollTrigger }).__collectionScrollTrigger;
+        };
+      });
+
+      // MOBILE: Natural smooth scrolling through all services without rigid pinning
+      mm.add('(max-width: 1023px)', () => {
+        sections.forEach((section, i) => {
+          gsap.set(section, { zIndex: i + 1 });
+
+          const inner = section.querySelector<HTMLElement>('.flow-art-container');
+          if (inner) {
+            gsap.set(inner, { rotation: 0, clearProps: 'transform' });
+          }
+        });
+
+        return () => {};
       });
 
       ScrollTrigger.refresh();
 
       return () => {
-        triggers.forEach((t) => t.kill());
-        delete (window as unknown as { __collectionScrollTrigger?: ScrollTrigger }).__collectionScrollTrigger;
+        mm.revert();
       };
     },
     { scope: containerRef, dependencies: [childCount(children), reducedMotion] },

@@ -232,11 +232,11 @@ export default function FlowArtDefaultDemo() {
         {/* WIDE HERO BANNER - RESPONSIVE MOBILE & DESKTOP */}
         <div className="relative -mx-[4vw] w-[calc(100%+8vw)] -mt-2 sm:-mt-3 sm:mb-auto overflow-hidden border-y border-[#800000]/30 bg-white">
           {/* Visual Container: full aspect ratio on mobile, min-height on desktop */}
-          <div className="relative w-full aspect-[1882/836] sm:aspect-auto sm:min-h-[520px] lg:min-h-[580px] flex items-end justify-center">
+          <div className="relative w-full aspect-[2048/768] sm:aspect-auto sm:min-h-[520px] lg:min-h-[580px] flex items-end justify-center">
             {/* Background Image - Uncropped on mobile, Cover on desktop */}
             <img
-              src="/hero-hamper.png"
-              alt="Sensori Five Senses Premium Corporate Festive Gifting Hamper Collection Diwali 2026"
+              src="/sensori-diwali-corporate-gifting-collection.png"
+              alt="Sensori Diwali Corporate Gifting Collection — India's Premier Five Senses Festive Hampers"
               className="absolute inset-0 w-full h-full object-contain sm:object-cover object-center"
             />
 
